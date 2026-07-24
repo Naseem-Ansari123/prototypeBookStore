@@ -67,28 +67,34 @@ const App = () => {
         setCount(count + 1);
         toast("Product deleted Sucessfully!")
         console.log(data);
-        
-      })
-      
-    }
-    
-    const updateProduct = (item) => {
-      setId(1);
-      setProduct(item);
-      var apiUrl = `${api}/${item.id}`
-      fetch(apiUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product)
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        setCount(count + 1)
-        setProduct(modal)
-        setId(null);
-        console.log(data)
 
       })
+
+  }
+  const editProduct = (e) => {
+    e.preventDefault();
+
+    fetch(`${api}/${product.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(product)
+    })
+      .then(res => res.json())
+      .then(data => {
+        toast("Product Updated Successfully!");
+        setCount(count + 1);
+        setProduct(modal);
+        setId(null);
+      });
+  }
+
+  const updateProduct = async (item) => {
+    console.log("item:", item);
+
+    setId(1);
+    setProduct(item);
   }
 
   useEffect(() => {
@@ -104,7 +110,7 @@ const App = () => {
       <div className="bg-white rounded-lg w-[80%] mx-auto gap-5 mt-13 p-8 flex justify-between">
         <div className="w-[30%] border-2 rounded-lg p-5 border-gray-300">
           <h1 className="text-xl font-medium">Add Products</h1>
-          <form onSubmit={createProducts} className="flex flex-col mt-3 space-y-4">
+          <form onSubmit={id ? editProduct : createProducts} className="flex flex-col mt-3 space-y-4">
             <input onChange={handleChange} value={product.title} name="title" type="text" placeholder="Title" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
             <input onChange={handleChange} value={product.price} name="price" type="number" placeholder="Price" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
             <input onChange={handleChange} value={product.discount} name="discount" type="number" placeholder="Discount" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
