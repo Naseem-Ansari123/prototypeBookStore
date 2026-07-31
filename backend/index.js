@@ -3,9 +3,22 @@ const fs = require("fs")
 const path = require("path")
 const cors = require("cors")
 const app = express()
+const { MongoClient } = require('mongodb');
+const { error } = require("console")
+
+let db = null;
+const client = new MongoClient('mongodb://localhost:27017/');
+client.connect()
+  .then((conn) => {
+    console.log("Mongodb connected successfully")
+    db = conn.db('BookStore')
+
+  })
+  .catch((error) => console.log(error))
 
 app.use(cors())
 app.use(express.json())
+
 
 const PORT = 8080
 
@@ -15,16 +28,6 @@ if (!fs.existsSync(DB_FILE)) {
   fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2))
 }
 
-const readProducts = () => {
-  try {
-    const data = fs.readFileSync(DB_FILE, "utf-8")
-    return JSON.parse(data)
-  }
-
-  catch {
-    return []
-  }
-}
 
 const writeProducts = (products) => {
   fs.writeFileSync(DB_FILE, JSON.stringify(products, null, 2))
@@ -66,14 +69,26 @@ const validateProduct = (body) => {
   return null
 }
 
-app.get("/products", (req, res) => {
-  const products = readProducts()
+const readProducts = async () => {
+  try {
+    const dataCollection = db.collection("data")
+    const newData = await dataCollection.find({}).toArray();
+    console.log(typeof newData);
 
-  res.json(products)
-})
+    return newData;
+  }
 
-app.get("/products/:id", (req, res) => {
-  const products = readProducts()
+  catch {
+    return []
+  }
+}
+app.get("/products", async (req, res) => {
+  const products = await readProducts();
+  res.json(products);
+});
+
+app.get("/products/:id", async (req, res) => {
+  const products = await readProducts()
 
   const product = products.find(
     item => item.id === Number(req.params.id)
@@ -87,7 +102,7 @@ app.get("/products/:id", (req, res) => {
   res.json(product)
 })
 
-app.post("/products", (req, res) => {
+app.post("/products", async (req, res) => {
   const error = validateProduct(req.body)
 
   if (error)
@@ -95,7 +110,7 @@ app.post("/products", (req, res) => {
       message: error
     })
 
-  const products = readProducts()
+  const products = await readProducts()
 
   const newId =
     products.length > 0
@@ -111,50 +126,50 @@ app.post("/products", (req, res) => {
     category: req.body.category,
     image: req.body.image
   }
-
-  products.push(newProduct)
+  const dataCollection = db.collection("data")
+  dataCollection.insertOne(newProduct)
 
   writeProducts(products)
 
   res.status(201).json(newProduct)
 })
 
-app.put("/products/:id", (req, res) => {
-  const error = validateProduct(req.body)
+app.put("/products/:id", async (req, res) => {
+  const error = validateProduct(req.body);
 
-  if (error)
-    return res.status(400).json({
-      message: error
-    })
-
-  const products = readProducts()
-
-  const index = products.findIndex(
-    item => item.id === Number(req.params.id)
-  )
-
-  if (index === -1)
-    return res.status(404).json({
-      message: "Product not found"
-    })
-
-  products[index] = {
-    id: products[index].id,
-    title: req.body.title,
-    description: req.body.description,
-    price: req.body.price,
-    discount: req.body.discount,
-    category: req.body.category,
-    image: req.body.image
+  if (error) {
+    return res.status(400).json({ message: error });
   }
 
-  writeProducts(products)
+  const dataCollection = db.collection("data");
 
-  res.json(products[index])
+  const result = await dataCollection.updateOne(
+    { id: Number(req.params.id) },
+    {
+      $set: {
+        title: req.body.title,
+        description: req.body.description,
+        price: req.body.price,
+        discount: req.body.discount,
+        category: req.body.category,
+        image: req.body.image
+      }
+    }
+  );
+
+  if (result.matchedCount === 0) {
+    return res.status(404).json({
+      message: "Product not found"
+    });
+  }
+
+  res.json({
+    message: "Product updated successfully"
+  });
 })
 
-app.delete("/products/:id", (req, res) => {
-  const products = readProducts()
+app.delete("/products/:id", async (req, res) => {
+  const products = await readProducts()
 
   const index = products.findIndex(
     item => item.id === Number(req.params.id)
