@@ -2,8 +2,8 @@
   {
     "_id": "6a6c7a805b1b2c39338c77ae",
     "id": 18,
-    "title": "The Selfish Gene",
-    "description": "Richard Dawkins explores evolution and genetics through the concept of the selfish gene.",
+    "title": "The Selfish",
+    "description": "Richard Dawkins exores evolution and genetics through the concept of the selfish gene.",
     "price": 649,
     "discount": 10,
     "category": "science",
@@ -15,7 +15,7 @@
     "title": "Clean Code",
     "description": "Robert C. Martin teaches best practices for writing clean, maintainable software.",
     "price": 899,
-    "discount": 20,
+    "discount": "2",
     "category": "technology",
     "image": "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg"
   },
@@ -70,12 +70,13 @@
     "image": "https://covers.openlibrary.org/b/isbn/9781476733524-L.jpg"
   },
   {
+    "_id": "6a6c7b64280b21df7d118309",
     "id": 25,
-    "title": "Operating System ConceptSSSS",
+    "title": "Operating System Concepts",
     "description": "Classic textbook covering operating system principles.",
     "price": "1199",
     "discount": "15",
     "category": "operating systems",
-    "image": "https://covers.openlibrary.org/b/isbn/9781119800361-L.jpg"
+    "image": "https://www.oreilly.com/api/v2/epubs/urn:orm:book:9781118063330/files/images/MyCoverImage.jpg"
   }
 ]

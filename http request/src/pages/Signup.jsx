@@ -1,6 +1,55 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { ToastContainer, toast } from 'react-toastify'
 
 const Signup = () => {
+  const api = "http://localhost:8080/users"
+  const model = {
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  }
+  const [input, setInput] = useState(model)
+
+  const handleChange = (e) => {
+    const name = e.target.name
+    const value = e.target.value
+    setInput({ ...input, [name]: value })
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (input.password !== input.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    // Create object to send (don't send confirmPassword)
+    const user = {
+      username: input.name,
+      email: input.email,
+      password: input.password,
+    };
+
+    console.log(user);
+    
+    const uri = `${api}/register`
+    fetch(uri, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setInput(model)
+        toast("User Signup Sucessfully!")
+        console.log(data);
+        
+      })
+    // axios.post("/api/register", user);
+  };
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
       {/* Background */}
@@ -19,13 +68,16 @@ const Signup = () => {
           </p>
         </div>
 
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
             <label className="mb-2 block text-sm text-slate-300">
               Full Name
             </label>
             <input
               type="text"
+              name="name"
+              value={input.name}
+              onChange={handleChange}
               placeholder="John Doe"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
@@ -37,6 +89,9 @@ const Signup = () => {
             </label>
             <input
               type="email"
+              name="email"
+              value={input.email}
+              onChange={handleChange}
               placeholder="john@example.com"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
@@ -48,6 +103,9 @@ const Signup = () => {
             </label>
             <input
               type="password"
+              name="password"
+              value={input.password}
+              onChange={handleChange}
               placeholder="••••••••"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
@@ -59,6 +117,9 @@ const Signup = () => {
             </label>
             <input
               type="password"
+              name="confirmPassword"
+              value={input.confirmPassword}
+              onChange={handleChange}
               placeholder="••••••••"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
@@ -97,6 +158,7 @@ const Signup = () => {
           </Link>
         </p>
       </div>
+      <ToastContainer />
     </div>
   );
 }
