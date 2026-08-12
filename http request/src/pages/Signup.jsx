@@ -1,55 +1,64 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify'
+import { httpRequest } from '../lib/http'
 
 const Signup = () => {
-  const api = "http://localhost:8080/users"
   const model = {
-    name: "",
+    username: "",
     email: "",
-    password: "",
-    confirmPassword: ""
+    password: ""
   }
   const [input, setInput] = useState(model)
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const name = e.target.name
-    const value = e.target.value
+    const data = e.target;
+    const name = data.name
+    const value = data.value
+    console.log(data);
+    console.log(name);
+    // console.log(value);
+    
     setInput({ ...input, [name]: value })
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (input.password !== input.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    // Create object to send (don't send confirmPassword)
-    const user = {
-      username: input.name,
-      email: input.email,
-      password: input.password,
-    };
-
-    console.log(user);
-    
-    const uri = `${api}/register`
-    fetch(uri, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setInput(model)
-        toast("User Signup Sucessfully!")
-        console.log(data);
+  const handleSubmit = async (e) => {
+    try{
+      e.preventDefault();
+      const { data } = await httpRequest.post("users/register",input)
+      toast.success(data.message)
+      setInput(model);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    //   fetch(uri, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(input)
+    // })
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     setInput(model)
+    //     toast.success("Signup Sucessfully!")
+    //     console.log(data);
+    //     console.log(data.oK);
+    //     console.log(data.message);
         
-      })
-    // axios.post("/api/register", user);
-  };
+    //     setTimeout(() => {
+    //       if (data.oK) {
+    //         navigate("/login");
+    //       }
+    //     }, 3000);
+    //   })
+    //   .catch((err)=> toast(err))
+    }
+    catch(err){
+      toast.error(err?.response?.data?.message || err.message);
+    }
+  }
+   
+  
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
       {/* Background */}
@@ -74,9 +83,10 @@ const Signup = () => {
               Full Name
             </label>
             <input
+              required
               type="text"
-              name="name"
-              value={input.name}
+              name="username"
+              value={input.username}
               onChange={handleChange}
               placeholder="John Doe"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
@@ -88,6 +98,7 @@ const Signup = () => {
               Email
             </label>
             <input
+              required
               type="email"
               name="email"
               value={input.email}
@@ -102,6 +113,7 @@ const Signup = () => {
               Password
             </label>
             <input
+              required
               type="password"
               name="password"
               value={input.password}
@@ -111,19 +123,7 @@ const Signup = () => {
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm text-slate-300">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={input.confirmPassword}
-              onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
-            />
-          </div>
+          
 
           <button
             className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3 font-semibold text-white transition duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/30"
@@ -158,7 +158,7 @@ const Signup = () => {
           </Link>
         </p>
       </div>
-      <ToastContainer />
+      
     </div>
   );
 }

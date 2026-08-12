@@ -1,6 +1,68 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { ToastContainer, toast } from 'react-toastify'
+import { httpRequest } from "../lib/http";
+import { useSession } from "../../zustand/useSession";
 
 const Login = () => {
+  const {setUser} = useSession(state=>state)
+  const model = {
+    email: "",
+    password: ""
+  }
+  const [input, setInput] = useState(model)
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const data = e.target;
+    const name = data.name
+    const value = data.value
+    console.log(data);
+    console.log(name);
+    // console.log(value);
+
+    setInput({ ...input, [name]: value })
+  }
+
+  const handleSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      const { data } = await httpRequest.post("users/login", input)
+      console.log(data.user);
+      setUser({
+        user: data.user,
+        token: data.token
+      })
+      setInput(model)
+      setTimeout(() => {
+        navigate("/apps/profile");
+      }, 2000);
+      
+      //   fetch(uri, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(input)
+      // })
+      //   .then((res) => res.json())
+      //   .then((data) => {
+      //     setInput(model)
+      //     toast.success("Signup Sucessfully!")
+      //     console.log(data);
+      //     console.log(data.oK);
+      //     console.log(data.message);
+
+      //     setTimeout(() => {
+      //       if (data.oK) {
+      //         navigate("/login");
+      //       }
+      //     }, 3000);
+      //   })
+      //   .catch((err)=> toast(err))
+    }
+    catch (err) {
+      toast.error(err?.response?.data?.message || err.message);
+    }
+  }
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
       {/* Background */}
@@ -21,14 +83,17 @@ const Login = () => {
         </div>
 
         {/* Form */}
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
             <label className="mb-2 block text-sm text-slate-300">
               Email
             </label>
             <input
               type="email"
+              name="email"
+              value={input.email}
               placeholder="Enter your email"
+              onChange={handleChange}
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition-all duration-300 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
           </div>
@@ -49,7 +114,10 @@ const Login = () => {
 
             <input
               type="password"
+              name="password"
+              value={input.password}
               placeholder="Enter your password"
+              onChange={handleChange}
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-white outline-none transition-all duration-300 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40"
             />
           </div>
@@ -67,6 +135,7 @@ const Login = () => {
 
           {/* Login Button */}
           <button
+            type="submit"
             className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3 font-semibold text-white transition duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/30"
           >
             Sign In
