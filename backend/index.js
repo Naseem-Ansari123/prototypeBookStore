@@ -7,6 +7,7 @@ const { MongoClient } = require('mongodb');
 const { error } = require("console")
 const userRoutes = require("./routes/userRoutes");
 const { dbConnection } = require("./config/db");
+const { ObjectId } = require("mongodb");
 
 dbConnection()
     .then(() => {
@@ -67,7 +68,6 @@ const readProducts = async () => {
     const db = await dbConnection()
     const dataCollection = db.collection("data")
     const newData = await dataCollection.find({}).toArray();
-    console.log(typeof newData);
 
     return newData;
   }
@@ -81,20 +81,23 @@ app.get("/products", async (req, res) => {
   res.json(products);
 });
 
-app.get("/products/:id", async (req, res) => {
-  const products = await readProducts()
+// app.get("/products/:id", async (req, res) => {
+//   const products = await readProducts()
 
-  const product = products.find(
-    item => item.id === Number(req.params.id)
-  )
+//   const product = products.find(
+//     item => item._id === req.params._id
+//   )
 
-  if (!product)
-    return res.status(404).json({
-      message: "Product not found"
-    })
+//   console.log(products);
+  
 
-  res.json(product)
-})
+//   if (!product)
+//     return res.status(404).json({
+//       message: "Product not found"
+//     })
+
+//   res.json(product)
+// })
 
 app.post("/products", async (req, res) => {
   const error = validateProduct(req.body)
@@ -129,9 +132,9 @@ app.put("/products/:id", async (req, res) => {
   }
   const db = await dbConnection()
   const dataCollection = db.collection("data");
-
+  
   const result = await dataCollection.updateOne(
-    { id: Number(req.params.id) },
+    { _id: new ObjectId(req.params.id) },
     {
       $set: {
         title: req.body.title,
@@ -146,7 +149,8 @@ app.put("/products/:id", async (req, res) => {
 
   if (result.matchedCount === 0) {
     return res.status(404).json({
-      message: "Product not found"
+      message: "Product not found",
+      result: result
     });
   }
 
@@ -161,7 +165,7 @@ app.delete("/products/:id", async (req, res) => {
   const dataCollection = db.collection("data");
 
   const result = await dataCollection.deleteOne({
-    id: Number(req.params.id),
+    _id: new ObjectId(req.params.id),
   });
 
   if (result.deletedCount === 0) {

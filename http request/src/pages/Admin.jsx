@@ -1,8 +1,5 @@
 import React from 'react'
-
 import { useState, useEffect } from "react"
-import { ToastContainer, toast } from 'react-toastify';
-
 
 const Admin = () => {
     const api = "http://localhost:8080/products"
@@ -63,12 +60,11 @@ const Admin = () => {
                 console.log(data);
 
             })
-
     }
 
     const updateProduct = (e) => {
         e.preventDefault();
-        var apiUrl = `${api}/${product.id}`
+        var apiUrl = `${api}/${product._id}`
         fetch(apiUrl, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -80,7 +76,7 @@ const Admin = () => {
                 setProduct(modal)
                 setId(null);
                 console.log(data)
-                toast("Product Updated Sucessfully!")
+                toast(data.message)
             })
     }
 
@@ -101,64 +97,274 @@ const Admin = () => {
         fetchApi()
     }, [count])
     return (
-        <div>
-            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white rounded-3xl p-10 my-8 shadow-xl">
-                <h1 className="text-5xl font-bold">Explore Science & Technology Books</h1>
-                <p className="mt-4 text-lg opacity-90">Learn AI, Programming, Physics, Mathematics and Engineering from the world's best authors.</p>
-                <button className="mt-8 bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:scale-105 transition">Browse Collection</button>
-            </div>
-            <div className="bg-white rounded-lg w-[80%] mx-auto gap-5 mt-13 p-8 flex justify-between">
-                <div className="w-[30%] border-2 rounded-lg p-5 border-gray-300">
-                    <h1 className="text-xl font-medium">Add Products</h1>
-                    <form onSubmit={id ? updateProduct : createProducts} className="flex flex-col mt-3 space-y-4">
-                        <input onChange={handleChange} value={product.title} name="title" type="text" placeholder="Title" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
-                        <input onChange={handleChange} value={product.price} name="price" type="number" placeholder="Price" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
-                        <input onChange={handleChange} value={product.discount} name="discount" type="number" placeholder="Discount" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
-                        <input onChange={handleChange} value={product.category} name="category" type="text" placeholder="Category" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
-                        <input onChange={handleChange} value={product.image} name="image" type="text" placeholder="Image" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required />
-                        <textarea onChange={handleChange} value={product.description} name="description" id="desc" name="description" placeholder="Description" className="border-2 text-lg rounded px-2 py-1 border-gray-300" required></textarea>
-                        {
-                            id ?
-                                <button className="bg-orange-700 rounded text-white font-medium p-1">Edit</button>
-                                :
-                                <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition">Submit</button>
-                        }
-                    </form>
+        <div className="min-h-screen bg-slate-50">
+            {/* Hero Section */}
+            <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-cyan-500 px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16 shadow-xl">
+
+                    {/* Decorative circles */}
+                    <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-2xl"></div>
+                    <div className="absolute -bottom-20 -left-10 h-60 w-60 rounded-full bg-cyan-300/10 blur-2xl"></div>
+
+                    <div className="relative max-w-3xl">
+                        <span className="inline-block rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
+                            📚 Science & Technology
+                        </span>
+
+                        <h1 className="mt-5 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl lg:text-6xl">
+                            Explore Science & Technology Books
+                        </h1>
+
+                        <p className="mt-5 max-w-2xl text-base leading-7 text-white/90 sm:text-lg">
+                            Learn AI, Programming, Physics, Mathematics and Engineering
+                            from the world's best authors.
+                        </p>
+
+                        <button className="mt-7 rounded-xl bg-white px-6 py-3 font-semibold text-indigo-700 shadow-lg transition hover:-translate-y-1 hover:shadow-xl active:scale-95">
+                            Browse Collection
+                        </button>
+                    </div>
                 </div>
+            </section>
 
-                <div className="flex-1 border-2 rounded-lg p-5 border-gray-300 grid grid-cols-3 gap-5">
-                    {
-                        fetchData.map((item, index) => (
-                            <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 transition duration-300">
-                                <img className="h-72 w-full object-cover" src={item.image} alt="img" />
-                                <div className="p-3">
+            {/* Main Content */}
+            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_1fr]">
 
-                                    <h2 className="font-bold text-xl mt-3">{item.title}</h2>
-                                    <p className="text-gray-500 text-sm mt-2 line-clamp-2">{item.description.slice(0, 20)}</p>
+                    {/* Add Product Form */}
+                    <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-6">
 
-                                    {/* price section */}
-                                    <div className="flex items-center gap-2 mt-3">
-                                        <span className="text-2xl font-bold text-indigo-700"> ₹{(item.price - (item.price * item.discount) / 100).toFixed(1)}</span>
-                                        <del className="text-gray-400">₹{item.price}</del>
-                                        <span className="bg-green-100 text-green-700 rounded-full px-2 py-1 text-xs">({item.discount}% off)</span>
-                                    </div>
+                        <div className="mb-6">
+                            <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+                                Product Management
+                            </p>
 
-                                    {/* category */}
-                                    <span className="bg-indigo-100 text-indigo-700 rounded-full px-3 py-1 text-xs">{item.category}</span>
+                            <h2 className="mt-1 text-2xl font-bold text-slate-800">
+                                {id ? "Edit Product" : "Add Product"}
+                            </h2>
 
-                                    {/* buy,update,delete bun */}
-                                    <div className="flex gap-2 mt-4">
-                                        <button className="flex-1 bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-700">Buy</button>
-                                        <button onClick={() => reflectChangesToInput(item)} className="bg-yellow-500 px-4 rounded-lg hover:bg-yellow-600">✏️</button>
-                                        <button onClick={() => deleteProduct(item.id)} className="bg-red-500 px-4 rounded-lg hover:bg-red-600">🗑</button>
-                                    </div>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {id
+                                    ? "Update the selected book details."
+                                    : "Add a new book to your collection."}
+                            </p>
+                        </div>
+
+                        <form
+                            onSubmit={id ? updateProduct : createProducts}
+                            className="flex flex-col gap-4"
+                        >
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                    Title
+                                </label>
+
+                                <input
+                                    onChange={handleChange}
+                                    value={product.title}
+                                    name="title"
+                                    type="text"
+                                    placeholder="Enter book title"
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                        Price
+                                    </label>
+
+                                    <input
+                                        onChange={handleChange}
+                                        value={product.price}
+                                        name="price"
+                                        type="number"
+                                        placeholder="₹ Price"
+                                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                        Discount
+                                    </label>
+
+                                    <input
+                                        onChange={handleChange}
+                                        value={product.discount}
+                                        name="discount"
+                                        type="number"
+                                        placeholder="%"
+                                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                        required
+                                    />
                                 </div>
                             </div>
-                        ))
-                    }
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                    Category
+                                </label>
+
+                                <input
+                                    onChange={handleChange}
+                                    value={product.category}
+                                    name="category"
+                                    type="text"
+                                    placeholder="e.g. Science"
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                    Image URL
+                                </label>
+
+                                <input
+                                    onChange={handleChange}
+                                    value={product.image}
+                                    name="image"
+                                    type="text"
+                                    placeholder="https://..."
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    onChange={handleChange}
+                                    value={product.description}
+                                    name="description"
+                                    placeholder="Enter book description"
+                                    rows="4"
+                                    className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                    required
+                                ></textarea>
+                            </div>
+
+                            {id ? (
+                                <button className="mt-2 w-full rounded-xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 hover:shadow-lg active:scale-95">
+                                    Update Product
+                                </button>
+                            ) : (
+                                <button className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 hover:shadow-lg active:scale-95">
+                                    Add Product
+                                </button>
+                            )}
+                        </form>
+                    </aside>
+
+                    {/* Products Section */}
+                    <section className="min-w-0">
+                        {/* Section Header */}
+                        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+                                    Collection
+                                </p>
+
+                                <h2 className="text-2xl font-bold text-slate-800 sm:text-3xl">
+                                    Available Books
+                                </h2>
+                            </div>
+
+                            <span className="w-fit rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600">
+                                {fetchData.length} Books
+                            </span>
+                        </div>
+
+                        {/* Product Grid */}
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {fetchData.map((item, index) => (
+                                <article
+                                    key={index}
+                                    className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                                >
+                                    {/* Book Image */}
+                                    <div className="relative overflow-hidden bg-slate-100">
+                                        <img
+                                            className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105"
+                                            src={item.image}
+                                            alt={item.title}
+                                        />
+
+                                        {/* Discount */}
+                                        <span className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-1 text-[10px] font-bold text-white">
+                                            {item.discount}% OFF
+                                        </span>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-3">
+                                        {/* Category */}
+                                        <span className="inline-block rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-medium text-indigo-600">
+                                            {item.category}
+                                        </span>
+
+                                        {/* Title */}
+                                        <h2 className="mt-2 line-clamp-1 text-sm font-bold text-slate-800 sm:text-base">
+                                            {item.title}
+                                        </h2>
+
+                                        {/* Description */}
+                                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                            {item.description}
+                                        </p>
+
+                                        {/* Price */}
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-base font-bold text-indigo-700 sm:text-lg">
+                                                ₹
+                                                {(
+                                                    item.price -
+                                                    (item.price * item.discount) / 100
+                                                ).toFixed(1)}
+                                            </span>
+
+                                            <del className="text-xs text-slate-400">
+                                                ₹{item.price}
+                                            </del>
+                                        </div>
+
+                                        {/* Buttons */}
+                                        <div className="mt-3 flex gap-1.5">
+                                            <button className="flex-1 rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700">
+                                                Buy
+                                            </button>
+
+                                            <button
+                                                onClick={() => reflectChangesToInput(item)}
+                                                className="rounded-lg bg-yellow-100 px-2.5 text-sm text-yellow-700 transition hover:bg-yellow-200"
+                                                title="Edit"
+                                            >
+                                                ✏️
+                                            </button>
+
+                                            <button
+                                                onClick={() => deleteProduct(item._id)}
+                                                className="rounded-lg bg-red-100 px-2.5 text-sm text-red-600 transition hover:bg-red-200"
+                                                title="Delete"
+                                            >
+                                                🗑
+                                            </button>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
                 </div>
-            </div>
-            <ToastContainer />
+            </main>
         </div>
     )
 }

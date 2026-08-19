@@ -1,7 +1,5 @@
 [
   {
-    "_id": "6a6c7a805b1b2c39338c77ae",
-    "id": 18,
     "title": "The Selfish",
     "description": "Richard Dawkins exores evolution and genetics through the concept of the selfish gene.",
     "price": 649,
@@ -10,8 +8,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9780198788607-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77af",
-    "id": 19,
     "title": "Clean Code",
     "description": "Robert C. Martin teaches best practices for writing clean, maintainable software.",
     "price": 899,
@@ -20,8 +16,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77b0",
-    "id": 20,
     "title": "Introduction to Algorithms",
     "description": "A comprehensive guide to algorithms, data structures, and computational techniques.",
     "price": 1499,
@@ -30,8 +24,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9780262046305-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77b1",
-    "id": 21,
     "title": "Artificial Intelligence: A Modern Approach",
     "description": "The world's leading textbook on AI, covering machine learning, search, and intelligent agents.",
     "price": 1999,
@@ -40,8 +32,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9780134610993-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77b2",
-    "id": 22,
     "title": "The Innovators",
     "description": "Walter Isaacson tells the story of the people who created the digital revolution.",
     "price": 799,
@@ -50,8 +40,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9781476708690-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77b3",
-    "id": 23,
     "title": "Cosmos",
     "description": "Carl Sagan explores the universe, astronomy, and humanity's place in space.",
     "price": 749,
@@ -60,8 +48,6 @@
     "image": "https://covers.openlibrary.org/b/isbn/9780345539434-L.jpg"
   },
   {
-    "_id": "6a6c7a805b1b2c39338c77b4",
-    "id": 24,
     "title": "The Gene",
     "description": "Siddhartha Mukherjee presents the history and future of genetics in an accessible way.",
     "price": 849,
@@ -70,13 +56,19 @@
     "image": "https://covers.openlibrary.org/b/isbn/9781476733524-L.jpg"
   },
   {
-    "_id": "6a6c7b64280b21df7d118309",
-    "id": 25,
     "title": "Operating System Concepts",
     "description": "Classic textbook covering operating system principles.",
     "price": "1199",
     "discount": "15",
     "category": "operating systems",
     "image": "https://www.oreilly.com/api/v2/epubs/urn:orm:book:9781118063330/files/images/MyCoverImage.jpg"
+  },
+  {
+    "title": "Physics JEE",
+    "description": "Very prodctive for beginners",
+    "price": "2000",
+    "discount": "10",
+    "category": "JEE",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYHrKV_1x8gqx9zF1QVJftodjPXKGv_1wz28-u2Gbq6w&s=10"
   }
 ]
