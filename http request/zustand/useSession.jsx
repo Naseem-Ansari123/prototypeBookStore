@@ -4,12 +4,22 @@ import { persist } from 'zustand/middleware'
 
 export const useSession = create(persist(
     (set)=>({
+        // user
         user: null,
         setUser: (payload)=>set(()=>({
             user: payload
         })),
         logout: ()=>set(()=>({
             user:null
+        })),
+
+        // admin
+        admin: "zuber",
+        setAdmin: (payload)=>set(()=>({
+            admin: payload
+        })),
+        adminLogout: ()=>set(()=>({
+            admin:null
         }))
     }),
     {name: "session"}

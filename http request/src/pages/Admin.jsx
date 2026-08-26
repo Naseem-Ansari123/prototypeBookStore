@@ -1,5 +1,6 @@
 import React from 'react'
 import { useState, useEffect } from "react"
+import { toast } from 'react-toastify'
 
 const Admin = () => {
     const api = "http://localhost:8080/products"
@@ -120,9 +121,30 @@ const Admin = () => {
                             from the world's best authors.
                         </p>
 
-                        <button className="mt-7 rounded-xl bg-white px-6 py-3 font-semibold text-indigo-700 shadow-lg transition hover:-translate-y-1 hover:shadow-xl active:scale-95">
-                            Browse Collection
-                        </button>
+                        <div className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-emerald-400 via-green-400 to-teal-500 p-5 shadow-lg sm:flex-row sm:gap-4 sm:p-6">
+
+                            {/* Primary CTA */}
+                            <button
+                                className=" w-full rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-emerald-700 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95 sm:w-auto"
+                            >
+                                📚 Browse Collection
+                            </button>
+
+                            {/* Login */}
+                            <button
+                                className=" w-full rounded-xl border border-white/60  bg-white/15 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:text-emerald-700 hover:shadow-lg active:scale-95 sm:w-auto"
+                            >
+                                Login
+                            </button>
+
+                            {/* Signup */}
+                            <button
+                                className=" w-full rounded-xl bg-emerald-950/90 px-6 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:bg-emerald-900 hover:shadow-xl active:scale-95 sm:w-auto"
+                            >
+                                ✨ Sign Up
+                            </button>
+
+                        </div>
                     </div>
                 </div>
             </section>
