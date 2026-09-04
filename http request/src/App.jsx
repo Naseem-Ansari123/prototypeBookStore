@@ -14,6 +14,7 @@ import AdminLayout from './components/AdminLayout'
 import AdminDashboard from './pages/adminPortal/AdminDashboard'
 import AdminSignup from './pages/adminPortal/AdminSignup'
 import AdminLogin from './pages/adminPortal/AdminLogin'
+import AuthGuardAdmin from './components/AuthGuardAdmin'
 
 const App = () => {
   return (
@@ -21,18 +22,24 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Layout />} >
           <Route path='/' element={<Homepage />} />
-          <Route path='/admin' element={<Admin />} />
         </Route>
         <Route path='/signup' element={<Signup />} />
         <Route path='/login' element={<Login />} />
         <Route path='/admin-signup' element={<AdminSignup />} />
         <Route path='/admin-login' element={<AdminLogin />} />
+        {/*  user authguard */}
         <Route element={<AuthGuard />}>
           <Route element={<UserLayout />}>
             <Route path='/apps/profile' element={<Profile />} />
           </Route>
+        </Route>
+
+         {/* admin */}
+        <Route path='/admin' element={<Admin />} />
+        {/* admin authguard */}
+        <Route element={<AuthGuardAdmin />}>
           <Route element={<AdminLayout />}>
-            <Route path='/adminPortal/AdminDashboard' element={<AdminDashboard />} />
+            <Route path='admin/admindashboard' element={<AdminDashboard />} />
           </Route>
         </Route>
       </Routes>

@@ -11,10 +11,18 @@ const AdminSignup = () => {
     ownerName: "",
     email: "",
     phoneNo: "",
-    password: ""
+    password: "",
+    logoUri: "",
+    description: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: ""
   }
   const navigate = useNavigate();
-  const [step, setStep] = useState(2);
+  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState(1);
+  const [logoSize, setLogoSize] = useState({ logo: "", size: "" })
   const [value, setValue] = useState(model)
 
   const handleChnage = (e) => {
@@ -29,8 +37,10 @@ const AdminSignup = () => {
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
-      const { data } = await httpRequest.post("admins/register", value)
-      toast.success(data.message)
+      // const { data } = await httpRequest.post("admins/register", value)
+      // toast.success(data.message)
+      console.log(value);
+
       setTimeout(() => {
         // navigate("/admin-login");
         setStep(step + 1)
@@ -39,6 +49,41 @@ const AdminSignup = () => {
     catch (err) {
       toast.error(err?.response?.data?.message || err.message);
     }
+
+  }
+
+  const handleSubmit2 = async (e) => {
+    try {
+      e.preventDefault();
+      const { data } = await httpRequest.post("admins/register", value)
+      toast.success(data.message)
+      console.log(value);
+      console.log(data);
+
+      setTimeout(() => {
+        navigate("/admin-login");
+        setStep(step + 1)
+      }, 2000);
+    }
+    catch (err) {
+      toast.error(err?.response?.data?.message || err.message);
+    }
+
+  }
+
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+    const fileName = file.name;
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+    setLogoSize({ logo: fileName, size: sizeInMB })
+
+    const blobUrl = URL.createObjectURL(file);
+    console.log(blobUrl);
+
+    setValue({
+      ...value,
+      logoUri: blobUrl
+    })
 
   }
   return (
@@ -96,7 +141,7 @@ const AdminSignup = () => {
                     Add your store information and create your
                     professional seller profile.
                   </p>
-
+                  
                 </div>
 
 
@@ -324,6 +369,8 @@ const AdminSignup = () => {
                           required
                           value={value.phoneNo}
                           onChange={handleChnage}
+                          minLength={10}
+                          maxLength={10}
                           name='phoneNo'
                           placeholder="+91 98765 43210"
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
@@ -351,14 +398,24 @@ const AdminSignup = () => {
                         </span>
 
                         <input
-                          type="password"
                           required
+                          type={showPassword ? "text" : "password"}
                           value={value.password}
                           onChange={handleChnage}
                           name='password'
+                          minLength={8}
+                          maxLength={12}
                           placeholder="Create a strong password"
+
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 transition hover:text-slate-700"
+                        >
+                          {showPassword ? "🙈" : "👁️"}
+                        </button>
                       </div>
                     </div>
 
@@ -492,98 +549,54 @@ const AdminSignup = () => {
 
 
                   {/* ================= STORE LOGO ================= */}
-                  <div className="mb-7">
-
-                    <label className="mb-3 block text-sm font-semibold text-slate-700">
-                      Store logo
-                    </label>
-
-                    <div className="flex items-center gap-4">
-
-                      <div
-                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-3xl transition hover:border-emerald-400 hover:bg-emerald-50">
-                        📷
-                      </div>
-
-                      <div>
-
-                        <button type="button"
-                          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-600">
-                          Upload Logo
-                        </button>
-
-                        <p className="mt-2 text-xs text-slate-400">
-                          PNG, JPG or WEBP · Max 2MB
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
 
 
                   {/* ================= FORM ================= */}
-                  <form className="space-y-5">
+                  <form className="space-y-5" onSubmit={handleSubmit2}>
+                    <div className="mb-7">
 
-                    {/* Store Name */}
-                    <div>
-
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Store name
+                      <label className="mb-3 block text-sm font-semibold text-slate-700">
+                        Store logo
                       </label>
 
-                      <div className="relative">
+                      <div className="flex items-center gap-4">
 
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">
-                          🏪
-                        </span>
+                        <div
+                          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-3xl transition hover:border-emerald-400 hover:bg-emerald-50">
+                          📷
+                        </div>
 
-                        <input type="text" placeholder="e.g. Naseem Book House"
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
+                        <div>
+                          <div className='flex gap-5 items-center'>
+
+
+                            <button type="button"
+                              className="relative rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-600">
+                              Upload Logo
+                              <input
+                                type="file"
+                                accept="image/png, image/jpg, image/webp"
+                                className='absolute top-0 left-0 w-[100%] h-[100%] opacity-0'
+                                onChange={handleImage}
+                                name='logoUri'
+                              />
+                            </button>
+                            {
+                              logoSize.logo && <>
+                                <button type='button' className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-600">{logoSize.logo}</button>
+                                <p className='text-violet-700'>{logoSize.size} MB</p></>
+                            }
+                          </div>
+
+                          <p className="mt-2 text-xs text-slate-400">
+                            PNG, JPG or WEBP · Max 2MB
+                          </p>
+
+                        </div>
 
                       </div>
 
                     </div>
-
-
-                    {/* Category */}
-                    <div>
-
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Store category
-                      </label>
-
-                      <div className="relative">
-
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">
-                          📚
-                        </span>
-
-                        <select
-                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-10 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                          defaultValue="">
-                          <option value="" disabled>
-                            Select a category
-                          </option>
-
-                          <option>Books & Literature</option>
-                          <option>Academic Books</option>
-                          <option>Programming & Technology</option>
-                          <option>Comics & Manga</option>
-                          <option>Children's Books</option>
-                          <option>Stationery</option>
-                          <option>Other</option>
-                        </select>
-
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                          ▼
-                        </span>
-
-                      </div>
-
-                    </div>
-
 
                     {/* Description */}
                     <div>
@@ -600,9 +613,8 @@ const AdminSignup = () => {
 
                       </div>
 
-                      <textarea rows="4" maxLength="200" placeholder="Tell customers what your store offers..."
-                        className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
-
+                      <textarea name='description' onChange={handleChnage} rows="4" maxLength="200" placeholder="Tell customers what your store offers..."
+                        className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" required />
                     </div>
 
 
@@ -635,8 +647,8 @@ const AdminSignup = () => {
                             📍
                           </span>
 
-                          <textarea rows="2" placeholder="Enter your complete store address"
-                            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
+                          <textarea name='address' onChange={handleChnage} rows="2" placeholder="Enter your complete store address"
+                            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" required />
 
                         </div>
 
@@ -652,8 +664,8 @@ const AdminSignup = () => {
                             City
                           </label>
 
-                          <input type="text" placeholder="Mumbai"
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
+                          <input name='city' onChange={handleChnage} type="text" placeholder="Mumbai"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" required />
 
                         </div>
 
@@ -664,8 +676,8 @@ const AdminSignup = () => {
                             State
                           </label>
 
-                          <input type="text" placeholder="Maharashtra"
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
+                          <input name='state' onChange={handleChnage} type="text" placeholder="Maharashtra"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" required />
 
                         </div>
 
@@ -676,8 +688,8 @@ const AdminSignup = () => {
                             Pincode
                           </label>
 
-                          <input type="text" placeholder="400001" maxLength="6"
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" />
+                          <input name='pincode' onChange={handleChnage} type="text" placeholder="400001" maxLength="6"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" required />
 
                         </div>
 
@@ -690,7 +702,7 @@ const AdminSignup = () => {
                     <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-between">
 
                       <button type="button"
-                      onClick={()=>setStep(step - 1)}
+                        onClick={() => setStep(step - 1)}
                         className="rounded-xl border border-slate-200 px-6 py-3.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
                         ← Back
                       </button>

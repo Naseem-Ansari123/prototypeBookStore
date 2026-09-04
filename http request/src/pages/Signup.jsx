@@ -28,6 +28,7 @@ const Signup = () => {
       e.preventDefault();
       const { data } = await httpRequest.post("users/register",input)
       toast.success(data.message)
+      
       setInput(model);
       setTimeout(() => {
         navigate("/login");

@@ -25,11 +25,10 @@ router.post("/login", async (req, res) => {
     try{
         const payload = req.body;
         const user = await userSchema.findOne({email: payload.email})
-        console.log(user);
         
         if(user){
             const isLogin = await bcrypt.compare(payload.password, user.password);
-            console.log(isLogin);
+            console.log(user.password);
             
             if(isLogin){
                 const tokenPayload = {
@@ -39,6 +38,7 @@ router.post("/login", async (req, res) => {
                 }
 
                 const token = jwt.sign(tokenPayload, secret, {expiresIn: '7d'});
+                
                 res.json({message: "Login Successfully",user:tokenPayload, token: token})
             }
             else{

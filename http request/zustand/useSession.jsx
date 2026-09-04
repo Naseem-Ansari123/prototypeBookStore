@@ -14,7 +14,7 @@ export const useSession = create(persist(
         })),
 
         // admin
-        admin: "zuber",
+        admin: null,
         setAdmin: (payload)=>set(()=>({
             admin: payload
         })),

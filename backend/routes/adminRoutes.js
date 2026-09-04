@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const { adminSchema } = require("../schema/admin");
+const bcrypt = require('bcrypt');
+const jwt = require("jsonwebtoken");
+const secret = '8cbb3e320c8aac743f82d0dedc083b2c'
 
 router.get('/',(req,res)=>{
     res.send("hello admin")
@@ -21,11 +24,9 @@ router.post("/login", async (req, res) => {
     try{
         const payload = req.body;
         const admin = await adminSchema.findOne({email: payload.email})
-        console.log(admin);
         
         if(admin){
             const isLogin = await bcrypt.compare(payload.password, admin.password);
-            console.log(isLogin);
             
             if(isLogin){
                 const tokenPayload = {
@@ -35,7 +36,7 @@ router.post("/login", async (req, res) => {
                 }
 
                 const token = jwt.sign(tokenPayload, secret, {expiresIn: '7d'});
-                res.json({message: "Login Successfully",user:tokenPayload, token: token})
+                res.json({message: "Login Successfully",admin:tokenPayload, token: token})
             }
             else{
                 res.status(404).json({message: "password is incorrect"})

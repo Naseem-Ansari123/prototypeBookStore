@@ -34,8 +34,9 @@ const Login = () => {
         token: data.token
       })
       setInput(model)
+      toast.success(data.message)
       setTimeout(() => {
-        navigate("/apps/profile");
+        navigate("/");
       }, 2000);
       
       //   fetch(uri, {
