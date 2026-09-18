@@ -3,9 +3,11 @@ import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify'
 import { httpRequest } from "../lib/http";
 import { useSession } from "../../zustand/useSession";
+import { useCart } from "../../zustand/cartStore";
 
 const Login = () => {
-  const {setUser} = useSession(state=>state)
+  const { setUser } = useSession((state) => state);
+  const initializeForUser = useCart((state) => state.initializeForUser);
   const model = {
     email: "",
     password: ""
@@ -26,39 +28,35 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     try {
+      
       e.preventDefault();
       const { data } = await httpRequest.post("users/login", input)
-      console.log(data.user);
-      setUser({
-        user: data.user,
-        token: data.token
-      })
-      setInput(model)
-      toast.success(data.message)
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-      
-      //   fetch(uri, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(input)
-      // })
-      //   .then((res) => res.json())
-      //   .then((data) => {
-      //     setInput(model)
-      //     toast.success("Signup Sucessfully!")
-      //     console.log(data);
-      //     console.log(data.oK);
-      //     console.log(data.message);
+      setUser({ user: data.user, token: data.token });
+      initializeForUser(data.user.id);
+      setInput(model);
+      toast.success(data.message);
+      navigate("/user/home");
 
-      //     setTimeout(() => {
-      //       if (data.oK) {
-      //         navigate("/login");
-      //       }
-      //     }, 3000);
-      //   })
-      //   .catch((err)=> toast(err))
+        fetch(uri, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setInput(model)
+          toast.success("Signup Sucessfully!")
+          console.log(data);
+          console.log(data.oK);
+          console.log(data.message);
+
+          setTimeout(() => {
+            if (data.oK) {
+              navigate("/login");
+            }
+          }, 3000);
+        })
+        .catch((err)=> toast(err))
     }
     catch (err) {
       toast.error(err?.response?.data?.message || err.message);

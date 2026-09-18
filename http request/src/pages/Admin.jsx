@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useAdminSession } from "../../zustand/adminSession";
 import {
+    User,
+    LogOut,
     BookOpen,
     ShieldCheck,
     BarChart3,
@@ -21,13 +24,45 @@ import {
     ChevronDown,
     Menu,
     X,
+    LayoutDashboard,
+    Store,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 
 const Admin = () => {
     const [openFaq, setOpenFaq] = useState(null);
     const [mobileMenu, setMobileMenu] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
     const navigate = useNavigate();
+    const profileRef = useRef(null);
+    const { admin, adminLogout } = useAdminSession((state) => state);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                profileRef.current &&
+                !profileRef.current.contains(event.target)
+            ) {
+                setProfileOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+
+
+    const handleLogout = () => {
+        adminLogout();
+
+        setProfileOpen(false);
+
+        navigate("/admin");
+    };
 
     const features = [
         {
@@ -176,13 +211,260 @@ const Admin = () => {
                             Reviews
                         </a>
 
-                        <button onClick={()=> navigate("/admin-login")} className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold transition hover:bg-white/10">
-                            Login
-                        </button>
+                        {!admin ? (
+                            <div className="flex items-center gap-3">
 
-                        <button onClick={()=> navigate("/admin-signup")} className="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-5 py-2.5 text-sm font-bold shadow-lg shadow-violet-500/20 transition hover:-translate-y-0.5">
-                            Sign Up
-                        </button>
+                                {/* Seller Login */}
+                                <button
+                                    onClick={() => navigate("/admin-login")}
+                                    className="
+                group relative flex items-center gap-2
+                rounded-xl border border-white/10
+                bg-white/[0.04]
+                px-4 py-2.5
+                text-sm font-semibold text-slate-200
+                transition-all duration-300
+                hover:-translate-y-0.5
+                hover:border-violet-400/30
+                hover:bg-white/[0.08]
+                hover:text-white
+            "
+                                >
+                                    <LockKeyhole
+                                        size={16}
+                                        className="text-slate-400 transition-colors group-hover:text-violet-400"
+                                    />
+
+                                    <span>Seller Login</span>
+                                </button>
+
+
+                                {/* Create Store */}
+                                <button
+                                    onClick={() => navigate("/admin-signup")}
+                                    className="
+                group relative flex items-center gap-2
+                overflow-hidden
+                rounded-xl
+                bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-500
+                px-5 py-2.5
+                text-sm font-bold text-white
+                shadow-lg shadow-violet-500/20
+                transition-all duration-300
+                hover:-translate-y-0.5
+                hover:shadow-xl
+                hover:shadow-violet-500/30
+            "
+                                >
+                                    {/* Shine animation */}
+                                    <span
+                                        className="
+                    absolute inset-0
+                    -translate-x-full
+                    bg-gradient-to-r
+                    from-transparent
+                    via-white/20
+                    to-transparent
+                    transition-transform duration-700
+                    group-hover:translate-x-full
+                "
+                                    />
+
+                                    <Store
+                                        size={16}
+                                        className="
+                    relative z-10
+                    transition-transform duration-300
+                    group-hover:scale-110
+                "
+                                    />
+
+                                    <span className="relative z-10">
+                                        Create Store
+                                    </span>
+                                </button>
+
+                            </div>
+                        ) : (
+                            <div className="relative" ref={profileRef}>
+
+                                {/* Admin Profile Trigger */}
+                                <button
+                                    onClick={() => setProfileOpen((prev) => !prev)}
+                                    className="
+                group flex items-center gap-3
+                rounded-2xl
+                border border-white/10
+                bg-white/[0.05]
+                px-2.5 py-2
+                backdrop-blur-xl
+                transition-all duration-300
+                hover:border-violet-400/30
+                hover:bg-white/[0.09]
+            "
+                                >
+
+                                    {/* Avatar */}
+                                    <div className="relative">
+                                        <img
+                                            src="https://api.dicebear.com/7.x/bottts/svg?seed=lulijJbr2GN2zgp2Ps_hM"
+                                            alt="Admin Profile"
+                                            className="
+                        h-9 w-9 rounded-xl
+                        bg-slate-800
+                        ring-1 ring-white/10
+                    "
+                                        />
+
+                                        {/* Online indicator */}
+                                        <span
+                                            className="
+                        absolute -bottom-0.5 -right-0.5
+                        h-3 w-3 rounded-full
+                        border-2 border-slate-950
+                        bg-emerald-400
+                    "
+                                        />
+                                    </div>
+
+                                    {/* Admin name */}
+                                    <div className="hidden text-left lg:block">
+                                        <p className="max-w-[110px] truncate text-sm font-semibold text-white">
+                                            {admin?.admin?.adminName || "Admin"}
+                                        </p>
+
+                                        <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-400">
+                                            Seller
+                                        </p>
+                                    </div>
+
+                                    <ChevronDown
+                                        size={15}
+                                        className={`
+                    text-slate-400
+                    transition-transform duration-300
+                    ${profileOpen ? "rotate-180" : ""}
+                `}
+                                    />
+                                </button>
+
+
+                                {/* Profile Dropdown */}
+                                {profileOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                                        transition={{ duration: 0.18 }}
+                                        className="
+                    absolute right-0 top-[calc(100%+12px)]
+                    w-72
+                    overflow-hidden
+                    rounded-2xl
+                    border border-white/10
+                    bg-slate-900/95
+                    p-2
+                    shadow-2xl shadow-black/40
+                    backdrop-blur-2xl
+                "
+                                    >
+
+                                        {/* Account Header */}
+                                        <div className="rounded-xl bg-white/[0.04] p-3">
+
+                                            <div className="flex items-center gap-3">
+
+                                                <img
+                                                    src="https://api.dicebear.com/7.x/bottts/svg?seed=lulijJbr2GN2zgp2Ps_hM"
+                                                    alt="Admin Profile"
+                                                    className="
+                                h-11 w-11 rounded-xl
+                                bg-slate-800
+                                ring-1 ring-violet-400/20
+                            "
+                                                />
+
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-bold text-white">
+                                                        {admin?.admin?.adminName || "Admin"}
+                                                    </p>
+
+                                                    <p className="truncate text-xs text-slate-500">
+                                                        {admin?.admin?.email || ""}
+                                                    </p>
+                                                </div>
+
+                                            </div>
+
+                                            {/* Seller badge */}
+                                            <div
+                                                className="
+                            mt-3 flex items-center gap-2
+                            rounded-lg
+                            bg-emerald-400/10
+                            px-3 py-2
+                            text-xs font-medium
+                            text-emerald-400
+                        "
+                                            >
+                                                <BadgeCheck size={14} />
+                                                Verified Seller Account
+                                            </div>
+
+                                        </div>
+
+
+                                        {/* Navigation */}
+                                        <div className="mt-2 space-y-1">
+
+                                            {/* My Store */}
+                                            <button
+                                                onClick={() => {
+                                                    setProfileOpen(false);
+                                                    navigate("/admin/admindashboard");
+                                                }}
+                                                className="
+                            flex w-full items-center gap-3
+                            rounded-xl px-3 py-2.5
+                            text-sm font-medium text-slate-300
+                            transition-all
+                            hover:bg-cyan-500/10
+                            hover:text-cyan-300
+                        "
+                                            >
+                                                <Store size={17} />
+                                                My Store
+                                            </button>
+
+                                        </div>
+
+
+                                        {/* Logout */}
+                                        <div className="mt-2 border-t border-white/10 pt-2">
+
+                                            <button
+                                                type="button"
+                                                onClick={handleLogout}
+                                                className="
+                            flex w-full items-center gap-3
+                            rounded-xl px-3 py-2.5
+                            text-sm font-medium text-red-400
+                            transition-all
+                            hover:bg-red-500/10
+                            hover:text-red-300
+                        "
+                                            >
+                                                <LogOut size={17} />
+                                                Logout
+                                            </button>
+
+                                        </div>
+
+                                    </motion.div>
+                                )}
+
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile button */}
@@ -736,8 +1018,8 @@ const Admin = () => {
                                 <ChevronDown
                                     size={19}
                                     className={`transition ${openFaq === index
-                                            ? "rotate-180"
-                                            : ""
+                                        ? "rotate-180"
+                                        : ""
                                         }`}
                                 />
                             </button>
@@ -789,11 +1071,11 @@ const Admin = () => {
 
                         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 
-                            <button onClick={()=> navigate("/admin-signup")} className="rounded-xl bg-white px-7 py-4 font-bold text-violet-700 shadow-xl transition hover:-translate-y-1">
+                            <button onClick={() => navigate("/admin-signup")} className="rounded-xl bg-white px-7 py-4 font-bold text-violet-700 shadow-xl transition hover:-translate-y-1">
                                 Create Admin Account
                             </button>
 
-                            <button onClick={()=> navigate("/admin-login")} className="rounded-xl border border-white/30 bg-white/10 px-7 py-4 font-semibold backdrop-blur transition hover:bg-white/20">
+                            <button onClick={() => navigate("/admin-login")} className="rounded-xl border border-white/30 bg-white/10 px-7 py-4 font-semibold backdrop-blur transition hover:bg-white/20">
                                 Already a seller? Login
                             </button>
 

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useSession } from "../../zustand/useSession";
+import { useCart } from "../../zustand/cartStore";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,7 +22,8 @@ const Navbar = () => {
 
   const profileRef = useRef(null);
 
-  const { user, logout } = useSession((state) => state);
+  const { user, logout } = useSession(state => state);
+  const clearCart = useCart(state => state.clear);
   const navigate = useNavigate();
 
   const navItems = [
@@ -79,6 +81,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
+    clearCart();
     logout();
     setIsProfileOpen(false);
     setIsMenuOpen(false);
@@ -240,7 +243,7 @@ const Navbar = () => {
                   </div>
 
                   <Link
-                    to="/apps/profile"
+                    to="/user/home"
                     onClick={() => setIsProfileOpen(false)}
                     className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
                   >
