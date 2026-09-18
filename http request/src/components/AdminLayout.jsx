@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useSession } from "../../zustand/useSession";
+import { useAdminSession } from "../../zustand/adminSession";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const AdminLayout = () => {
 
   const profileRef = useRef(null);
 
-  const { admin, adminLogout } = useSession((state) => state);
+  const { admin, adminLogout } = useAdminSession(state => state);
 
   // ================================
   // NAVIGATION ITEMS
@@ -131,7 +131,7 @@ const AdminLayout = () => {
     setProfileOpen(false);
     setSidebarOpen(false);
 
-    navigate("/");
+    navigate("/admin");
   };
 
   // ================================

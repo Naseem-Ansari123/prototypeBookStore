@@ -18,6 +18,7 @@ import {
 
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useSession } from "../../zustand/useSession";
+import { useCart } from "../../zustand/cartStore";
 
 const UserLayout = () => {
   const navigate = useNavigate();
@@ -28,12 +29,14 @@ const UserLayout = () => {
 
   const profileRef = useRef(null);
 
-  const { user, logout } = useSession((state) => state);
+  const { user, logout } = useSession(state => state);
+  const clearCart = useCart(state => state.clear);
+  const cartCount = useCart(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
 
   const navItems = [
     {
       name: "Home",
-      path: "/user",
+      path: "/user/home",
       icon: Home,
     },
     {
@@ -107,6 +110,7 @@ const UserLayout = () => {
   }, [sidebarOpen]);
 
   const handleLogout = () => {
+    clearCart();
     logout();
     setProfileOpen(false);
     navigate("/");
@@ -324,7 +328,7 @@ const UserLayout = () => {
 
               {/* Cart count */}
               <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-600 px-1 text-[9px] font-bold text-white">
-                2
+                {cartCount}
               </span>
             </button>
 
@@ -378,7 +382,7 @@ const UserLayout = () => {
                   <button
                     onClick={() => {
                       setProfileOpen(false);
-                      navigate("/user/profile");
+                      navigate("/user/home");
                     }}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                   >

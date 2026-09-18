@@ -1,14 +1,42 @@
-import React from 'react'
-import { useEffect, useState, useMemo } from 'react'
+import React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import {
+  Heart,
+  Eye,
+  ShoppingCart,
+  MapPin,
+  Store,
+  Search,
+  X,
+  ChevronRight,
+  Package,
+  User,
+  Tag,
+} from "lucide-react";
 
 const Homepage = () => {
-  const api = "http://localhost:8080/products"
-  const [fetchData, setFetchData] = useState([])
-  const [count, setCount] = useState(0)
+  const api = "http://localhost:8080/products";
 
-  /* ---------------- Categories ---------------- */
+  // =====================================================
+  // STATE
+  // =====================================================
+
+  const [fetchData, setFetchData] = useState([]);
+  const [stores, setStores] = useState({});
+
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const [previewProduct, setPreviewProduct] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
+  // =====================================================
+  // CATEGORIES
+  // =====================================================
 
   const categories = [
     {
@@ -43,18 +71,255 @@ const Homepage = () => {
     },
   ];
 
+  // =====================================================
+  // FETCH BOOKS + STORE INFORMATION
+  // =====================================================
 
-  const fetchApi = () => {
-    fetch(api)
-      .then((res) => res.json())
-      .then((data) => {
-        setFetchData(data)
-        console.log(data)
-      })
-  }
   useEffect(() => {
-    fetchApi()
-  }, [count])
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // -------------------------------------------------
+        // 1. Fetch all books
+        // -------------------------------------------------
+
+        const response = await fetch(api);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch books");
+        }
+
+        const books = await response.json();
+
+        console.log("Products received from backend:", books);
+
+        const validBooks = Array.isArray(books) ? books : [];
+
+        setFetchData(validBooks);
+
+        // -------------------------------------------------
+        // 2. Get unique admin IDs
+        // -------------------------------------------------
+
+        const adminIds = [
+          ...new Set(
+            validBooks
+              .map((book) => book.admin_id)
+              .filter(Boolean)
+          ),
+        ];
+
+        console.log("Unique Admin IDs:", adminIds);
+
+        // -------------------------------------------------
+        // 3. Fetch each admin ONLY ONCE
+        // -------------------------------------------------
+
+        const storeResults = await Promise.all(
+          adminIds.map(async (adminId) => {
+            try {
+              const res = await fetch(
+                `http://localhost:8080/users/${adminId}`
+              );
+
+              if (!res.ok) {
+                throw new Error(
+                  `Failed to fetch admin ${adminId}`
+                );
+              }
+
+              const admin = await res.json();
+
+              // Create complete address
+              const completeAddress =
+                admin.completeAddress ||
+                [
+                  admin.address,
+                  admin.city,
+                  admin.state,
+                  admin.pincode,
+                ]
+                  .filter(Boolean)
+                  .join(", ");
+
+              return [
+                adminId,
+                {
+                  storeName:
+                    admin.storeName || "Unknown Store",
+
+                  completeAddress:
+                    completeAddress || "Unknown Location",
+
+                  logoUri: admin.logoUri || "",
+                },
+              ];
+            } catch (error) {
+              console.error(
+                `Store fetch error for ${adminId}:`,
+                error
+              );
+
+              return [
+                adminId,
+                {
+                  storeName: "Unknown Store",
+                  completeAddress: "Unknown Location",
+                  logoUri: "",
+                },
+              ];
+            }
+          })
+        );
+
+        // -------------------------------------------------
+        // 4. Convert array into object
+        // -------------------------------------------------
+
+        const storeMap = Object.fromEntries(storeResults);
+
+        console.log("Store cache:", storeMap);
+
+        setStores(storeMap);
+      } catch (error) {
+        console.error("Homepage loading error:", error);
+
+        setFetchData([]);
+        setStores({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
+  const getQuantity = (book) => {
+    return Number(book?.quantity ?? 0);
+  };
+
+  const getFinalPrice = (book) => {
+    const price = Number(book?.price ?? 0);
+    const discount = Number(book?.discount ?? 0);
+
+    return Math.max(
+      0,
+      price - (price * discount) / 100
+    );
+  };
+
+  // =====================================================
+  // GET STORE FROM CACHE
+  // =====================================================
+
+  const getStore = (adminId) => {
+    return (
+      stores[adminId] || {
+        storeName: "Unknown Store",
+        completeAddress: "Unknown Location",
+        logoUri: "",
+      }
+    );
+  };
+
+  // =====================================================
+  // STOCK TEXT
+  // =====================================================
+
+  const getStockText = (quantity) => {
+    if (quantity <= 0) return "Out of stock";
+
+    if (quantity <= 5) {
+      return `Only ${quantity} left`;
+    }
+
+    return `${quantity} available`;
+  };
+
+  // =====================================================
+  // WISHLIST
+  // =====================================================
+
+  const toggleWishlist = (id) => {
+    setWishlist((prev) =>
+      prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  // =====================================================
+  // SCROLL TO CATEGORIES
+  // =====================================================
+
+  const scrollToCategories = () => {
+    document
+      .getElementById("categories")
+      ?.scrollIntoView({
+        behavior: "smooth",
+      });
+  };
+
+  // =====================================================
+  // FILTER BOOKS
+  // =====================================================
+
+  const filteredBooks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return fetchData.filter((book) => {
+      // -------------------------------------------------
+      // Category
+      // -------------------------------------------------
+
+      const matchesCategory =
+        selectedCategory === "All" ||
+        String(book.category || "")
+          .toLowerCase()
+          .includes(selectedCategory.toLowerCase());
+
+      // -------------------------------------------------
+      // Store information from CACHE
+      // -------------------------------------------------
+
+      const store = getStore(book.admin_id);
+
+      const storeName = store.storeName || "Unknown Store";
+
+      const location =
+        store.completeAddress || "Unknown Location";
+
+      // -------------------------------------------------
+      // Search
+      // -------------------------------------------------
+
+      const matchesSearch =
+        !query ||
+        String(book.title || "")
+          .toLowerCase()
+          .includes(query) ||
+        String(book.author || "")
+          .toLowerCase()
+          .includes(query) ||
+        String(book.category || "")
+          .toLowerCase()
+          .includes(query) ||
+        storeName.toLowerCase().includes(query) ||
+        location.toLowerCase().includes(query);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [fetchData, selectedCategory, search, stores]);
+
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <div className="min-h-screen overflow-hidden bg-slate-50">
 
@@ -64,8 +329,6 @@ const Homepage = () => {
 
       <section className="relative min-h-[620px] overflow-hidden bg-slate-950">
 
-        {/* Background Effects */}
-
         <div className="absolute inset-0">
 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(6,182,212,0.25),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.3),transparent_35%)]" />
@@ -73,8 +336,6 @@ const Homepage = () => {
           <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
 
           <div className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-purple-600/10 blur-3xl" />
-
-          {/* Decorative Books */}
 
           <motion.div
             animate={{
@@ -120,16 +381,22 @@ const Homepage = () => {
 
         </div>
 
-        {/* Hero Content */}
-
         <div className="relative mx-auto flex min-h-[620px] max-w-7xl items-center px-4 py-20 sm:px-6 lg:px-8">
 
           <div className="max-w-3xl">
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
+              initial={{
+                opacity: 0,
+                y: 30,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                duration: 0.7,
+              }}
             >
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-300 backdrop-blur-xl">
                 ✨ Knowledge starts here
@@ -137,9 +404,18 @@ const Homepage = () => {
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 35 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
+              initial={{
+                opacity: 0,
+                y: 35,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.1,
+              }}
               className="mt-6 text-4xl font-black leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl"
             >
               Discover books that
@@ -150,8 +426,14 @@ const Homepage = () => {
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{
+                opacity: 0,
+                y: 30,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
               transition={{
                 duration: 0.7,
                 delay: 0.2,
@@ -163,39 +445,69 @@ const Homepage = () => {
               of fascinating books from around the world.
             </motion.p>
 
-            {/* Fake Search UI */}
+            {/* Search */}
 
             <motion.div
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{
+                opacity: 0,
+                y: 25,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
               transition={{
                 duration: 0.7,
                 delay: 0.3,
               }}
               className="mt-8 max-w-2xl"
             >
+
               <div className="group flex items-center rounded-2xl border border-white/10 bg-white/10 px-5 py-4 shadow-2xl backdrop-blur-xl transition hover:border-cyan-400/40 hover:bg-white/15">
 
-                <span className="text-xl">
-                  🔍
-                </span>
+                <Search className="h-5 w-5 text-slate-300" />
 
-                <span className="ml-4 flex-1 text-sm text-slate-400 sm:text-base">
-                  Search books, authors, categories...
-                </span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) =>
+                    setSearch(e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      document
+                        .getElementById("books")
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                        });
+                    }
+                  }}
+                  placeholder="Search books, authors, categories, stores..."
+                  className="ml-4 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-400 sm:text-base"
+                />
 
-                <span className="hidden rounded-lg border border-white/10 bg-white/10 px-3 py-1 text-xs text-slate-400 sm:block">
-                  ⌘ K
-                </span>
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="rounded-full p-1 text-slate-300 hover:bg-white/10 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
 
               </div>
+
             </motion.div>
 
-            {/* Hero Buttons */}
-
             <motion.div
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{
+                opacity: 0,
+                y: 25,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
               transition={{
                 duration: 0.7,
                 delay: 0.4,
@@ -211,13 +523,7 @@ const Homepage = () => {
               </Link>
 
               <button
-                onClick={() =>
-                  document
-                    .getElementById("categories")
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                    })
-                }
+                onClick={scrollToCategories}
                 className="rounded-xl border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white backdrop-blur transition hover:bg-white/10"
               >
                 Explore Categories
@@ -229,12 +535,9 @@ const Homepage = () => {
 
         </div>
 
-        {/* Bottom Gradient */}
-
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-50 to-transparent" />
 
       </section>
-
 
       {/* =====================================================
           CATEGORY SECTION
@@ -256,8 +559,47 @@ const Homepage = () => {
           </h2>
 
           <p className="mt-2 text-slate-500">
-            Explore our collection based on what you love.
+            Choose a category and discover books from our stores.
           </p>
+
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-2">
+
+          <button
+            onClick={() => setSelectedCategory("All")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              selectedCategory === "All"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+            }`}
+          >
+            All Books
+          </button>
+
+          {categories.map((category) => (
+
+            <button
+              key={category.name}
+              onClick={() => {
+                setSelectedCategory(category.name);
+
+                document
+                  .getElementById("books")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                  });
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                selectedCategory === category.name
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+              }`}
+            >
+              {category.icon} {category.name}
+            </button>
+
+          ))}
 
         </div>
 
@@ -265,8 +607,18 @@ const Homepage = () => {
 
           {categories.map((category, index) => (
 
-            <motion.div
+            <motion.button
+              type="button"
               key={category.name}
+              onClick={() => {
+                setSelectedCategory(category.name);
+
+                document
+                  .getElementById("books")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                  });
+              }}
               initial={{
                 opacity: 0,
                 y: 30,
@@ -284,7 +636,11 @@ const Homepage = () => {
               whileHover={{
                 y: -6,
               }}
-              className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-cyan-300 hover:shadow-xl"
+              className={`group rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-xl ${
+                selectedCategory === category.name
+                  ? "border-cyan-400 ring-2 ring-cyan-100"
+                  : "border-slate-200 hover:border-cyan-300"
+              }`}
             >
 
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl transition group-hover:scale-110 group-hover:bg-cyan-50">
@@ -299,11 +655,11 @@ const Homepage = () => {
                 {category.text}
               </p>
 
-              <div className="mt-3 text-xs font-semibold text-cyan-600 opacity-0 transition group-hover:opacity-100">
+              <div className="mt-3 text-xs font-semibold text-cyan-600">
                 Explore →
               </div>
 
-            </motion.div>
+            </motion.button>
 
           ))}
 
@@ -311,14 +667,16 @@ const Homepage = () => {
 
       </section>
 
-
       {/* =====================================================
-          TRENDING BOOKS HEADER
+          BOOK MARKETPLACE
       ===================================================== */}
 
-      <section className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+      <section
+        id="books"
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+      >
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
           <div>
 
@@ -329,7 +687,7 @@ const Homepage = () => {
               </span>
 
               <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
-                Trending now
+                BookVerse Marketplace
               </p>
 
             </div>
@@ -339,120 +697,735 @@ const Homepage = () => {
             </h2>
 
             <p className="mt-2 text-sm text-slate-500">
-              Hand-picked books for curious minds.
+              {selectedCategory === "All"
+                ? `${filteredBooks.length} books available`
+                : `${filteredBooks.length} ${selectedCategory} books available`}
             </p>
 
           </div>
 
           <Link
             to="/books"
-            className="text-sm font-semibold text-indigo-600 hover:underline"
+            className="flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:underline"
           >
-            View all books →
+            View all books
+            <ChevronRight className="h-4 w-4" />
           </Link>
 
         </div>
 
+        {/* Active filters */}
+
+        {(search || selectedCategory !== "All") && (
+
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+
+            {selectedCategory !== "All" && (
+
+              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+
+                <Tag className="h-3.5 w-3.5" />
+
+                {selectedCategory}
+
+                <button
+                  onClick={() =>
+                    setSelectedCategory("All")
+                  }
+                  className="rounded-full hover:bg-indigo-100"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+              </span>
+
+            )}
+
+            {search && (
+
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
+
+                Search: "{search}"
+
+                <button
+                  onClick={() => setSearch("")}
+                  className="rounded-full hover:bg-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+              </span>
+
+            )}
+
+          </div>
+
+        )}
+
+        {/* Loading */}
+
+        {loading ? (
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+
+            {Array.from({
+              length: 10,
+            }).map((_, index) => (
+
+              <div
+                key={index}
+                className="animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white"
+              >
+
+                <div className="aspect-[4/5] bg-slate-200" />
+
+                <div className="space-y-3 p-3">
+
+                  <div className="h-3 w-16 rounded bg-slate-200" />
+
+                  <div className="h-4 w-3/4 rounded bg-slate-200" />
+
+                  <div className="h-3 w-1/2 rounded bg-slate-200" />
+
+                  <div className="h-8 rounded bg-slate-200" />
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        ) : filteredBooks.length === 0 ? (
+
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+
+              <Search className="h-7 w-7 text-slate-400" />
+
+            </div>
+
+            <h3 className="mt-4 text-lg font-bold text-slate-800">
+              No books found
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Try another title, author, category or store.
+            </p>
+
+            <button
+              onClick={() => {
+                setSearch("");
+                setSelectedCategory("All");
+              }}
+              className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Clear Filters
+            </button>
+
+          </div>
+
+        ) : (
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+
+            {filteredBooks.slice(0, 10).map((item, index) => {
+
+              const quantity = getQuantity(item);
+
+              const finalPrice =
+                getFinalPrice(item);
+
+              // ---------------------------------------------
+              // Get cached store information
+              // ---------------------------------------------
+
+              const store = getStore(item.admin_id);
+
+              const storeName =
+                store.storeName ||
+                "Unknown Store";
+
+              const location =
+                store.completeAddress ||
+                "Unknown Location";
+
+              const isWishlisted =
+                wishlist.includes(item._id);
+
+              return (
+
+                <motion.div
+                  key={item._id || index}
+                  initial={{
+                    opacity: 0,
+                    y: 50,
+                    scale: 0.96,
+                  }}
+                  whileInView={{
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                  }}
+                  viewport={{
+                    once: false,
+                    amount: 0.15,
+                  }}
+                  transition={{
+                    duration: 0.45,
+                    delay: index * 0.04,
+                    ease: "easeOut",
+                  }}
+                  className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                >
+
+                  {/* Image */}
+
+                  <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+
+                    {item.image ? (
+
+                      <img
+                        src={item.image}
+                        alt={item.title || "Book"}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+
+                    ) : (
+
+                      <div className="flex h-full items-center justify-center text-5xl">
+                        📚
+                      </div>
+
+                    )}
+
+                    {/* Discount */}
+
+                    {Number(item.discount) > 0 && (
+
+                      <span className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-1 text-[9px] font-bold text-white shadow">
+                        {item.discount}% OFF
+                      </span>
+
+                    )}
+
+                    {/* Wishlist */}
+
+                    <button
+                      onClick={() =>
+                        toggleWishlist(item._id)
+                      }
+                      aria-label="Add to wishlist"
+                      className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur transition hover:scale-110 ${
+                        isWishlisted
+                          ? "text-pink-600"
+                          : "text-slate-500 hover:text-pink-500"
+                      }`}
+                    >
+
+                      <Heart
+                        className="h-4 w-4"
+                        fill={
+                          isWishlisted
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+
+                    </button>
+
+                    {/* Stock */}
+
+                    <span
+                      className={`absolute bottom-2 left-2 rounded-full px-2 py-1 text-[9px] font-bold shadow ${
+                        quantity <= 0
+                          ? "bg-red-500 text-white"
+                          : quantity <= 5
+                            ? "bg-amber-400 text-slate-900"
+                            : "bg-white/95 text-green-700"
+                      }`}
+                    >
+                      {getStockText(quantity)}
+                    </span>
+
+                  </div>
+
+                  {/* Content */}
+
+                  <div className="p-3">
+
+                    {/* Category */}
+
+                    <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2 py-1 text-[9px] font-medium text-indigo-600">
+
+                      <Tag className="h-3 w-3 shrink-0" />
+
+                      {item.category || "General"}
+
+                    </span>
+
+                    {/* Title */}
+
+                    <h3
+                      title={item.title}
+                      className="mt-2 line-clamp-2 min-h-[36px] text-sm font-bold text-slate-800"
+                    >
+                      {item.title || "Untitled Book"}
+                    </h3>
+
+                    {/* Author */}
+
+                    <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-500">
+
+                      <User className="h-3 w-3 shrink-0" />
+
+                      <span className="truncate">
+                        {item.author ||
+                          "Unknown author"}
+                      </span>
+
+                    </div>
+
+                    {/* Store */}
+
+                    <div className="mt-2 flex items-start gap-1 text-[10px] text-slate-600">
+
+                      <Store className="mt-0.5 h-3 w-3 shrink-0 text-indigo-500" />
+
+                      <span
+                        title={storeName}
+                        className="line-clamp-1 font-semibold"
+                      >
+                        {storeName}
+                      </span>
+
+                    </div>
+
+                    {/* Location */}
+
+                    <div className="mt-1 flex items-start gap-1 text-[10px] text-slate-400">
+
+                      <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+
+                      <span
+                        title={location}
+                        className="line-clamp-1"
+                      >
+                        {location}
+                      </span>
+
+                    </div>
+
+                    {/* Price */}
+
+                    <div className="mt-3 flex items-center gap-2">
+
+                      <span className="text-base font-bold text-indigo-600">
+                        ₹{finalPrice.toFixed(0)}
+                      </span>
+
+                      {Number(item.discount) > 0 && (
+
+                        <del className="text-[10px] text-slate-400">
+                          ₹
+                          {Number(
+                            item.price || 0
+                          ).toFixed(0)}
+                        </del>
+
+                      )}
+
+                    </div>
+
+                    {/* Rating */}
+
+                    <div className="mt-2 flex items-center gap-1 text-xs">
+
+                      <span className="text-yellow-400">
+                        ★★★★★
+                      </span>
+
+                      <span className="text-slate-400">
+                        4.8
+                      </span>
+
+                    </div>
+
+                    {/* Actions */}
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+
+                      <button
+                        onClick={() =>
+                          setPreviewProduct(item)
+                        }
+                        className="flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[10px] font-bold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                      >
+
+                        <Eye className="h-3.5 w-3.5" />
+
+                        Preview
+
+                      </button>
+
+                      <button
+                        disabled={quantity <= 0}
+                        onClick={() => {
+
+                          if (quantity > 0) {
+
+                            setPreviewProduct({
+                              ...item,
+                              buyMode: true,
+                            });
+
+                          }
+
+                        }}
+                        className="flex items-center justify-center gap-1 rounded-lg bg-indigo-600 px-2 py-2 text-[10px] font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+
+                        <ShoppingCart className="h-3.5 w-3.5" />
+
+                        {quantity > 0
+                          ? "Buy Now"
+                          : "Sold Out"}
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </motion.div>
+
+              );
+
+            })}
+
+          </div>
+
+        )}
+
+        {/* View all */}
+
+        {filteredBooks.length > 10 && (
+
+          <div className="mt-8 text-center">
+
+            <Link
+              to="/books"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-indigo-600 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              View all {filteredBooks.length} books
+
+              <ChevronRight className="h-4 w-4" />
+
+            </Link>
+
+          </div>
+
+        )}
+
       </section>
 
-
       {/* =====================================================
-          YOUR EXISTING BOOK CONTENT
+          BOOK PREVIEW MODAL
       ===================================================== */}
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {previewProduct && (
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          onClick={() =>
+            setPreviewProduct(null)
+          }
+        >
 
-          {fetchData.slice(0, 10).map((item, index) => (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 25,
+              scale: 0.96,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+            }}
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
 
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 80, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1, }}
-              exit={{ opacity: 0, y: -80, scale: 0.9, }}
-              viewport={{ once: false, amount: 0.25 }}
-              transition={{ duration: 0.6, delay: index * 0.08, ease: "easeOut", }}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
+            {/* Header */}
+
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
+
+              <div>
+
+                <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">
+                  Book Preview
+                </p>
+
+                <h2 className="mt-1 line-clamp-1 text-lg font-bold text-slate-800">
+                  {previewProduct.title}
+                </h2>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  setPreviewProduct(null)
+                }
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+            </div>
+
+            <div className="grid gap-6 p-5 md:grid-cols-[220px_1fr]">
 
               {/* Image */}
 
-              <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+              <div className="mx-auto w-full max-w-[220px] overflow-hidden rounded-xl bg-slate-100 shadow-sm">
 
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
+                {previewProduct.image ? (
 
-                {/* Discount */}
+                  <img
+                    src={previewProduct.image}
+                    alt={previewProduct.title}
+                    className="aspect-[4/5] h-full w-full object-cover"
+                  />
 
-                <span className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-1 text-[9px] font-bold text-white">
-                  {item.discount}% OFF
-                </span>
+                ) : (
 
-                {/* Fake Wishlist */}
+                  <div className="flex aspect-[4/5] items-center justify-center text-6xl">
+                    📚
+                  </div>
 
-                <button
-                  className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-pink-500 shadow-md backdrop-blur transition hover:scale-110 hover:bg-pink-500 hover:text-white"
-                >
-                  ♡
-                </button>
+                )}
 
               </div>
 
-              {/* Content */}
+              {/* Details */}
 
-              <div className="p-3">
+              <div>
 
-                <span className="inline-block max-w-full truncate rounded-full bg-indigo-50 px-2 py-1 text-[9px] font-medium text-indigo-600">
-                  {item.category}
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">
+
+                  <Tag className="h-3.5 w-3.5" />
+
+                  {previewProduct.category ||
+                    "General"}
+
                 </span>
 
-                <h3 className="mt-2 line-clamp-1 text-sm font-bold text-slate-800">
-                  {item.title}
+                <h3 className="mt-3 text-2xl font-black text-slate-800">
+                  {previewProduct.title}
                 </h3>
 
-                <div className="mt-2 flex items-center gap-2">
+                <p className="mt-2 flex items-center gap-2 text-sm text-slate-500">
 
-                  <span className="text-base font-bold text-indigo-600">
+                  <User className="h-4 w-4" />
+
+                  {previewProduct.author ||
+                    "Unknown author"}
+
+                </p>
+
+                {/* Price */}
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+
+                  <span className="text-2xl font-black text-indigo-600">
                     ₹
-                    {(
-                      item.price -
-                      (item.price * item.discount) / 100
+                    {getFinalPrice(
+                      previewProduct
                     ).toFixed(0)}
                   </span>
 
-                  <del className="text-[10px] text-slate-400">
-                    ₹{item.price}
-                  </del>
+                  {Number(
+                    previewProduct.discount
+                  ) > 0 && (
+
+                    <>
+                      <del className="text-sm text-slate-400">
+                        ₹
+                        {Number(
+                          previewProduct.price || 0
+                        ).toFixed(0)}
+                      </del>
+
+                      <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-600">
+                        {previewProduct.discount}%
+                        OFF
+                      </span>
+                    </>
+
+                  )}
 
                 </div>
 
-                {/* Rating */}
+                {/* Store information */}
 
-                <div className="mt-2 flex items-center gap-1 text-xs">
-                  <span className="text-yellow-400">
-                    ★★★★★
-                  </span>
+                <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
 
-                  <span className="text-slate-400">
-                    4.8
-                  </span>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Sold by
+                  </p>
+
+                  <div className="mt-2 flex items-start gap-3">
+
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                      <Store className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0">
+
+                      {(() => {
+
+                        const store = getStore(
+                          previewProduct.admin_id
+                        );
+
+                        return (
+                          <>
+                            <p className="font-bold text-slate-800">
+                              {store.storeName}
+                            </p>
+
+                            <p className="mt-1 flex items-start gap-1 text-xs text-slate-500">
+
+                              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+
+                              <span>
+                                {store.completeAddress}
+                              </span>
+
+                            </p>
+                          </>
+                        );
+
+                      })()}
+
+                    </div>
+
+                  </div>
+
                 </div>
+
+                {/* Stock */}
+
+                <div className="mt-4 flex items-center gap-3 rounded-xl border border-slate-200 p-3">
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+
+                    <Package className="h-4 w-4 text-slate-600" />
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-slate-400">
+                      Stock
+                    </p>
+
+                    <p
+                      className={`text-sm font-bold ${
+                        getQuantity(
+                          previewProduct
+                        ) <= 0
+                          ? "text-red-600"
+                          : getQuantity(
+                                previewProduct
+                              ) <= 5
+                            ? "text-amber-600"
+                            : "text-green-600"
+                      }`}
+                    >
+                      {getStockText(
+                        getQuantity(
+                          previewProduct
+                        )
+                      )}
+                    </p>
+
+                  </div>
+
+                </div>
+
+                {/* Description */}
+
+                <div className="mt-5">
+
+                  <h4 className="font-bold text-slate-800">
+                    About this book
+                  </h4>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    {previewProduct.description ||
+                      "No description available for this book."}
+                  </p>
+
+                </div>
+
+                {/* Buy */}
+
+                <button
+                  disabled={
+                    getQuantity(
+                      previewProduct
+                    ) <= 0
+                  }
+                  onClick={() => {
+
+                    if (
+                      getQuantity(
+                        previewProduct
+                      ) > 0
+                    ) {
+
+                      console.log(
+                        "Buy Now:",
+                        previewProduct
+                      );
+
+                    }
+
+                  }}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+
+                  <ShoppingCart className="h-5 w-5" />
+
+                  {getQuantity(
+                    previewProduct
+                  ) > 0
+                    ? "Buy Now"
+                    : "Out of Stock"}
+
+                </button>
+
+                <p className="mt-2 text-center text-[11px] text-slate-400">
+                  Product ID:{" "}
+                  {previewProduct._id || "N/A"}
+                </p>
 
               </div>
 
-            </motion.div>
+            </div>
 
-          ))}
+          </motion.div>
 
         </div>
 
-      </section>
-
+      )}
 
       {/* =====================================================
           INTERACTIVE BOOK DISCOVERY
@@ -462,15 +1435,11 @@ const Homepage = () => {
 
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950">
 
-          {/* Glow */}
-
           <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-purple-500/20 blur-3xl" />
 
           <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
 
           <div className="relative grid items-center gap-10 p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
-
-            {/* Left */}
 
             <div>
 
@@ -487,8 +1456,6 @@ const Homepage = () => {
                 a world of books waiting for you.
               </p>
 
-              {/* Fake Interests */}
-
               <div className="mt-6 flex flex-wrap gap-2">
 
                 {[
@@ -501,6 +1468,28 @@ const Homepage = () => {
 
                   <button
                     key={item}
+                    onClick={() => {
+
+                      const name =
+                        item.includes("AI")
+                          ? "AI"
+                          : item.includes("Coding")
+                            ? "Programming"
+                            : item.includes("Science")
+                              ? "Science"
+                              : item.includes("Math")
+                                ? "Mathematics"
+                                : "Novels";
+
+                      setSelectedCategory(name);
+
+                      document
+                        .getElementById("books")
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                        });
+
+                    }}
                     className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 backdrop-blur transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-white"
                   >
                     {item}
@@ -511,14 +1500,24 @@ const Homepage = () => {
               </div>
 
               <button
+                onClick={() => {
+
+                  setSelectedCategory("All");
+                  setSearch("");
+
+                  document
+                    .getElementById("books")
+                    ?.scrollIntoView({
+                      behavior: "smooth",
+                    });
+
+                }}
                 className="mt-7 rounded-xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 transition hover:-translate-y-1 hover:shadow-xl"
               >
                 Find My Book →
               </button>
 
             </div>
-
-            {/* Right Floating Books */}
 
             <div className="relative flex h-80 items-center justify-center">
 
@@ -535,15 +1534,19 @@ const Homepage = () => {
               >
 
                 {fetchData[0]?.image ? (
+
                   <img
                     src={fetchData[0].image}
                     alt=""
                     className="aspect-[4/5] w-full object-cover"
                   />
+
                 ) : (
+
                   <div className="flex aspect-[4/5] items-center justify-center bg-white text-6xl">
                     📕
                   </div>
+
                 )}
 
               </motion.div>
@@ -561,15 +1564,19 @@ const Homepage = () => {
               >
 
                 {fetchData[1]?.image ? (
+
                   <img
                     src={fetchData[1].image}
                     alt=""
                     className="aspect-[4/5] w-full object-cover"
                   />
+
                 ) : (
+
                   <div className="flex aspect-[4/5] items-center justify-center bg-white text-6xl">
                     📘
                   </div>
+
                 )}
 
               </motion.div>
@@ -581,7 +1588,6 @@ const Homepage = () => {
         </div>
 
       </section>
-
 
       {/* =====================================================
           STATS
@@ -632,7 +1638,6 @@ const Homepage = () => {
         </div>
 
       </section>
-
 
       {/* =====================================================
           WHY BOOKVERSE
@@ -709,7 +1714,6 @@ const Homepage = () => {
 
       </section>
 
-
       {/* =====================================================
           CTA
       ===================================================== */}
@@ -762,5 +1766,4 @@ const Homepage = () => {
   );
 };
 
-
-export default Homepage
+export default Homepage;

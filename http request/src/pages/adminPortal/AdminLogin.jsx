@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { httpRequest } from "../../lib/http";
-import { useSession } from "../../../zustand/useSession";
+import { useAdminSession } from "../../../zustand/adminSession";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { setAdmin , admin} = useSession(state=>state)
+  const { setAdmin, admin } = useAdminSession(state => state)
 
   const [value, setValue] = useState({
     email: "",
@@ -35,19 +35,10 @@ const AdminLogin = () => {
       // console.log(data);
       // console.log(data.admin);
       // console.log(data.token);
-      setAdmin({
-        admin:data.admin,
-        token:data.token
-      })
-      toast.success(data.message || "Login successful");
-      console.log(admin);
-      
-      
 
-      // Navigate according to your application
-      setTimeout(() => {
-        navigate("/admin/admindashboard");
-      }, 2000);
+      setAdmin({ admin: data.admin, token: data.token });
+      toast.success(data.message || "Login successful");
+      navigate("/admin/admindashboard");
 
     } catch (err) {
       toast.error(

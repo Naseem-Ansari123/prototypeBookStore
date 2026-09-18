@@ -39,12 +39,7 @@ const AdminSignup = () => {
       e.preventDefault();
       // const { data } = await httpRequest.post("admins/register", value)
       // toast.success(data.message)
-      console.log(value);
-
-      setTimeout(() => {
-        // navigate("/admin-login");
-        setStep(step + 1)
-      }, 2000);
+      setStep(2);
     }
     catch (err) {
       toast.error(err?.response?.data?.message || err.message);
@@ -56,14 +51,8 @@ const AdminSignup = () => {
     try {
       e.preventDefault();
       const { data } = await httpRequest.post("admins/register", value)
-      toast.success(data.message)
-      console.log(value);
-      console.log(data);
-
-      setTimeout(() => {
-        navigate("/admin-login");
-        setStep(step + 1)
-      }, 2000);
+      toast.success(data.message);
+      navigate("/admin-login");
     }
     catch (err) {
       toast.error(err?.response?.data?.message || err.message);
@@ -77,13 +66,14 @@ const AdminSignup = () => {
     const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
     setLogoSize({ logo: fileName, size: sizeInMB })
 
-    const blobUrl = URL.createObjectURL(file);
-    console.log(blobUrl);
-
-    setValue({
-      ...value,
-      logoUri: blobUrl
-    })
+    const reader = new FileReader();
+    reader.onload = () => {
+      setValue((prev) => ({
+        ...prev,
+        logoUri: reader.result
+      }));
+    };
+    reader.readAsDataURL(file);
 
   }
   return (

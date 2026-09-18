@@ -1,41 +1,21 @@
-const { model, Schema} = require("mongoose");
+const { model, Schema } = require("mongoose");
 const bcrypt = require("bcrypt");
-const { Timestamp } = require("mongodb");
 const emailValidate = require("email-validator");
 
 const schema = new Schema({
-    username: {
-        type: String,
-        required: true
-    },
-    email: {
-        type: String,
-        required: true,
-        validate: {
-            validator: (email)=> {
-                return emailValidate.validate(email)
-            },
-            message: "Invalid email"
-        }
-    },
-    password: {
-        type: String,
-        required: true
-    }
-},{timestamps: true})
+  username: { type: String, required: true, trim: true },
+  email: {
+    type: String, required: true, unique: true, lowercase: true, trim: true,
+    validate: { validator: (email) => emailValidate.validate(email), message: "Invalid email" }
+  },
+  password: { type: String, required: true, minlength: 6 }
+}, { timestamps: true });
 
-// unique email
-schema.pre('save', async function(){
-    const count = await model("User").countDocuments({email: this.email})
-    if(count > 0){
-        throw new Error("Email already exists")
-    }
-})
+schema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
 
-// password encrypt
-schema.pre('save', async function(){
-    const encryptedPassword = await bcrypt.hash(this.password.toString(),12);
-    this.password = encryptedPassword;
-})
-const userSchema = model("User",schema)
-module.exports = { userSchema }
+const userSchema = model("User", schema);
+module.exports = { userSchema };

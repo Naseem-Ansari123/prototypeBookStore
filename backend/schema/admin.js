@@ -43,7 +43,7 @@ const schema = new Schema(
     pincode: {
       type: String,
       required: true,
-      match: [/^[0-9]{6}$/, "Invalid pincode"],
+      // match: [/^[0-9]{6}$/, "Invalid pincode"],
     },
 
     // 👤 Owner Information
@@ -69,7 +69,7 @@ const schema = new Schema(
     phoneNo: {
       type: String,
       required: true,
-      match: [/^[6-9][0-9]{9}$/, "Invalid phone number"],
+      // match: [/^[6-9][0-9]{9}$/, "Invalid phone number"],
     },
 
     password: {
