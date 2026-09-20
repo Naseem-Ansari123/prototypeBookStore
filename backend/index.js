@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -9,6 +10,12 @@ const { dbConnection } = require("./config/db");
 const { ObjectId } = require("mongodb");
 const { requireAdmin } = require("./middleware/auth");
 const { adminSchema } = require("./schema/admin");
+const { GoogleGenAI } = require("@google/genai");
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY
+});
+console.log(process.env.GEMINI_API_KEY)
 
 const PORT = 8080;
 
@@ -387,6 +394,138 @@ app.delete("/products/:id", requireAdmin, async (req, res) => {
 
     res.status(500).json({
       message: "Failed to delete product"
+    });
+  }
+});
+
+// ===============================
+// GENERATE BOOK SUMMARY
+// ===============================
+
+app.get("/products/:id/summary", async (req, res) => {
+  try {
+    // Validate product ID
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid product ID"
+      });
+    }
+
+    const db = await dbConnection();
+    const dataCollection = db.collection("data");
+
+    // Find book
+    const book = await dataCollection.findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Book not found"
+      });
+    }
+
+    // ==================================
+    // CHECK CACHED SUMMARY
+    // ==================================
+
+    if (book.summary && book.summary.trim()) {
+      return res.json({
+        message: "Summary fetched from database",
+        summary: book.summary,
+        cached: true
+      });
+    }
+
+    // ==================================
+    // BOOK INFORMATION
+    // ==================================
+
+    const title = book.title || "";
+    const author = book.author || "";
+    const description = book.description || "";
+
+    if (!title || !author) {
+      return res.status(400).json({
+        message: "Book title and author are required"
+      });
+    }
+
+    // ==================================
+    // GEMINI PROMPT
+    // ==================================
+
+    const prompt = `
+You are a professional book summarizer.
+
+Create a clear and accurate summary for the following book.
+
+Book Title: ${title}
+Author: ${author}
+
+Book Description:
+${description}
+
+Requirements:
+1. Write approximately 150-250 words.
+2. Explain the main idea of the book.
+3. Mention the important themes or concepts.
+4. Keep the language simple and easy to understand.
+5. Do not invent specific events, characters, facts, or claims that are not supported by the provided information.
+6. Do not say that you are an AI.
+7. Return only the summary.
+`;
+
+    // ==================================
+    // CALL GEMINI
+    // ==================================
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt
+    });
+
+    const summary = response.text?.trim();
+
+    if (!summary) {
+      return res.status(500).json({
+        message: "Gemini did not return a summary"
+      });
+    }
+
+    // ==================================
+    // SAVE SUMMARY TO MONGODB
+    // ==================================
+
+    await dataCollection.updateOne(
+      {
+        _id: new ObjectId(req.params.id)
+      },
+      {
+        $set: {
+          summary: summary,
+          summaryGenerated: true,
+          summaryGeneratedAt: new Date()
+        }
+      }
+    );
+
+    // ==================================
+    // RETURN SUMMARY
+    // ==================================
+
+    res.json({
+      message: "Summary generated successfully",
+      summary: summary,
+      cached: false
+    });
+
+  } catch (error) {
+    console.error("Generate summary error:", error);
+
+    res.status(500).json({
+      message: "Failed to generate book summary",
+      error: error.message
     });
   }
 });
