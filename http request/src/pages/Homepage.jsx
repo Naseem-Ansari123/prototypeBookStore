@@ -2,6 +2,7 @@ import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import {
   Heart,
   Eye,
@@ -316,6 +317,84 @@ const Homepage = () => {
     });
   }, [fetchData, selectedCategory, search, stores]);
 
+  // get gemini response from backend
+  const geminiResponse = async (id) => {
+    try {
+      const toastId = toast.loading("✨ Generating AI summary...");
+
+      const response = await fetch(
+        `http://localhost:8080/products/${id}/summary`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate summary");
+      }
+
+      const data = await response.json();
+      const summary = data.summary;
+
+      toast.update(toastId, {
+        render: (
+          <div className="w-[380px]">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">✨</span>
+
+              <h2 className="text-lg font-bold text-violet-700">
+                AI Book Summary
+              </h2>
+            </div>
+
+            {/* Summary */}
+            <div className="max-h-[350px] overflow-y-auto pr-2">
+              <p className="text-sm text-gray-700 leading-6 whitespace-pre-line">
+                {summary}
+              </p>
+            </div>
+
+            {/* OK Button */}
+            <div className="flex justify-end mt-4 pt-3 border-t border-gray-200">
+              <button
+                onClick={() => toast.dismiss(toastId)}
+                className="
+                bg-violet-700
+                hover:bg-violet-800
+                text-white
+                px-5 py-2
+                rounded-lg
+                font-semibold
+                transition-all
+                duration-200
+                hover:scale-105
+              "
+              >
+                ✓ OK, Got it
+              </button>
+            </div>
+          </div>
+        ),
+
+        type: "success",
+        isLoading: false,
+
+        // Don't automatically close
+        autoClose: false,
+
+        // Prevent clicking outside from closing
+        closeOnClick: false,
+
+        // Remove default close button
+        closeButton: false,
+      });
+    } catch (error) {
+      console.error(error);
+
+      toast.error("❌ Unable to generate book summary.", {
+        autoClose: 3000,
+      });
+    }
+  };
+
   // =====================================================
   // UI
   // =====================================================
@@ -568,11 +647,10 @@ const Homepage = () => {
 
           <button
             onClick={() => setSelectedCategory("All")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              selectedCategory === "All"
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
-            }`}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${selectedCategory === "All"
+              ? "bg-indigo-600 text-white shadow-lg"
+              : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+              }`}
           >
             All Books
           </button>
@@ -590,11 +668,10 @@ const Homepage = () => {
                     behavior: "smooth",
                   });
               }}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                selectedCategory === category.name
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
-              }`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${selectedCategory === category.name
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+                }`}
             >
               {category.icon} {category.name}
             </button>
@@ -636,11 +713,10 @@ const Homepage = () => {
               whileHover={{
                 y: -6,
               }}
-              className={`group rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-xl ${
-                selectedCategory === category.name
-                  ? "border-cyan-400 ring-2 ring-cyan-100"
-                  : "border-slate-200 hover:border-cyan-300"
-              }`}
+              className={`group rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-xl ${selectedCategory === category.name
+                ? "border-cyan-400 ring-2 ring-cyan-100"
+                : "border-slate-200 hover:border-cyan-300"
+                }`}
             >
 
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl transition group-hover:scale-110 group-hover:bg-cyan-50">
@@ -919,11 +995,10 @@ const Homepage = () => {
                         toggleWishlist(item._id)
                       }
                       aria-label="Add to wishlist"
-                      className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur transition hover:scale-110 ${
-                        isWishlisted
-                          ? "text-pink-600"
-                          : "text-slate-500 hover:text-pink-500"
-                      }`}
+                      className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur transition hover:scale-110 ${isWishlisted
+                        ? "text-pink-600"
+                        : "text-slate-500 hover:text-pink-500"
+                        }`}
                     >
 
                       <Heart
@@ -940,13 +1015,12 @@ const Homepage = () => {
                     {/* Stock */}
 
                     <span
-                      className={`absolute bottom-2 left-2 rounded-full px-2 py-1 text-[9px] font-bold shadow ${
-                        quantity <= 0
-                          ? "bg-red-500 text-white"
-                          : quantity <= 5
-                            ? "bg-amber-400 text-slate-900"
-                            : "bg-white/95 text-green-700"
-                      }`}
+                      className={`absolute bottom-2 left-2 rounded-full px-2 py-1 text-[9px] font-bold shadow ${quantity <= 0
+                        ? "bg-red-500 text-white"
+                        : quantity <= 5
+                          ? "bg-amber-400 text-slate-900"
+                          : "bg-white/95 text-green-700"
+                        }`}
                     >
                       {getStockText(quantity)}
                     </span>
@@ -1216,15 +1290,26 @@ const Homepage = () => {
               {/* Details */}
 
               <div>
+                <div className="flex justify-between items-center">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">
 
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">
+                    <Tag className="h-3.5 w-3.5" />
 
-                  <Tag className="h-3.5 w-3.5" />
+                    {previewProduct.category ||
+                      "General"}
+                  </span>
+                  <button
+                    onClick={() => geminiResponse(previewProduct._id)}
+                    className=" group flex items-center gap-2 bg-gradient-to-r from-violet-700 to-fuchsia-700  text-white font-semibold px-4 py-2 rounded-xl shadow-md shadow-violet-500/30 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/40 active:scale-95
+  "
+                  >
+                    <span className="text-lg group-hover:rotate-12 transition-transform">
+                      ✨
+                    </span>
 
-                  {previewProduct.category ||
-                    "General"}
-
-                </span>
+                    Generate with AI
+                  </button>
+                </div>
 
                 <h3 className="mt-3 text-2xl font-black text-slate-800">
                   {previewProduct.title}
@@ -1254,21 +1339,21 @@ const Homepage = () => {
                     previewProduct.discount
                   ) > 0 && (
 
-                    <>
-                      <del className="text-sm text-slate-400">
-                        ₹
-                        {Number(
-                          previewProduct.price || 0
-                        ).toFixed(0)}
-                      </del>
+                      <>
+                        <del className="text-sm text-slate-400">
+                          ₹
+                          {Number(
+                            previewProduct.price || 0
+                          ).toFixed(0)}
+                        </del>
 
-                      <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-600">
-                        {previewProduct.discount}%
-                        OFF
-                      </span>
-                    </>
+                        <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-600">
+                          {previewProduct.discount}%
+                          OFF
+                        </span>
+                      </>
 
-                  )}
+                    )}
 
                 </div>
 
@@ -1337,17 +1422,16 @@ const Homepage = () => {
                     </p>
 
                     <p
-                      className={`text-sm font-bold ${
-                        getQuantity(
+                      className={`text-sm font-bold ${getQuantity(
+                        previewProduct
+                      ) <= 0
+                        ? "text-red-600"
+                        : getQuantity(
                           previewProduct
-                        ) <= 0
-                          ? "text-red-600"
-                          : getQuantity(
-                                previewProduct
-                              ) <= 5
-                            ? "text-amber-600"
-                            : "text-green-600"
-                      }`}
+                        ) <= 5
+                          ? "text-amber-600"
+                          : "text-green-600"
+                        }`}
                     >
                       {getStockText(
                         getQuantity(
@@ -1761,7 +1845,13 @@ const Homepage = () => {
         </div>
 
       </section>
-
+      <ToastContainer
+        position="top-right"
+        autoClose={false}
+        closeOnClick={false}
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 };

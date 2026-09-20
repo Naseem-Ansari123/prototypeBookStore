@@ -7,6 +7,7 @@ import Signup from './pages/Signup'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
 import { ToastContainer, toast } from 'react-toastify'
+import "react-toastify/dist/ReactToastify.css";
 import AuthGuard from './components/AuthGuard'
 import UserLayout from './components/UserLayout'
 import AdminLayout from './components/AdminLayout'
